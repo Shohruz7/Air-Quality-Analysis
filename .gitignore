@@ -1,0 +1,35 @@
+__pycache__/
+.ipynb_checkpoints
+.env
+
+# Data files
+data/raw/*.csv
+data/raw/*.json
+data/raw/*.parquet
+data/processed/*.csv
+data/processed/*.json
+data/processed/*.parquet
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment (already exists, but keeping for reference)
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+data/

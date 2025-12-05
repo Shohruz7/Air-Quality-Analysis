@@ -1,0 +1,25 @@
+# Core data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# NYC Open Data API
+sodapy>=2.2.0
+
+# Data storage
+pyarrow>=12.0.0
+
+# Geospatial (optional, for spatial joins)
+geopandas>=0.13.0
+
+# Visualization (for notebooks)
+matplotlib>=3.7.0
+seaborn>=0.12.0
+altair>=5.0.0
+plotly>=5.17.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Dashboard framework (for Streamlit app)
+streamlit>=1.28.0
+
