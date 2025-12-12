@@ -10,6 +10,9 @@ data/processed/*.csv
 data/processed/*.json
 data/processed/*.parquet
 
+# GeoJSON files
+*.geojson
+
 # Python
 *.pyc
 *.pyo
