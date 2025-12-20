@@ -1,6 +1,27 @@
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb_checkpoints
+
+# Environment variables
 .env
+.env.local
+.env.*.local
 
 # Data files
 data/raw/*.csv
@@ -9,20 +30,30 @@ data/raw/*.parquet
 data/processed/*.csv
 data/processed/*.json
 data/processed/*.parquet
+data/
 
 # GeoJSON files
 *.geojson
 
-# Python
-*.pyc
-*.pyo
-*.pyd
-.Python
+# Node.js / Frontend
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Virtual environment (already exists, but keeping for reference)
-venv/
-env/
-ENV/
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Frontend specific
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/.cache/
 
 # IDE
 .vscode/
@@ -30,9 +61,42 @@ ENV/
 *.swp
 *.swo
 *~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-data/
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage/
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
