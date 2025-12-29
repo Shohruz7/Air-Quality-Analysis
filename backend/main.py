@@ -5,7 +5,7 @@ Serves data from parquet files to React frontend
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -13,6 +13,9 @@ import json
 from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel
+from scipy import stats
+from io import BytesIO
+import base64
 
 app = FastAPI(title="NYC Air Quality API")
 
@@ -495,6 +498,399 @@ def get_comparison_data(request: ComparisonRequest):
         "value_col": value_col,
         "unit": unit,
     }
+
+
+def calculate_aqi(pollutant: str, value: float, unit: str) -> dict:
+    """Calculate Air Quality Index (AQI) based on pollutant type and value."""
+    # AQI breakpoints (EPA standards)
+    aqi_breakpoints = {
+        'PM2.5': {
+            'unit': 'µg/m³',
+            'breakpoints': [
+                (0, 12.0, 0, 50, 'Good'),
+                (12.1, 35.4, 51, 100, 'Moderate'),
+                (35.5, 55.4, 101, 150, 'Unhealthy for Sensitive Groups'),
+                (55.5, 150.4, 151, 200, 'Unhealthy'),
+                (150.5, 250.4, 201, 300, 'Very Unhealthy'),
+                (250.5, 500.4, 301, 500, 'Hazardous'),
+            ]
+        },
+        'PM10': {
+            'unit': 'µg/m³',
+            'breakpoints': [
+                (0, 54, 0, 50, 'Good'),
+                (55, 154, 51, 100, 'Moderate'),
+                (155, 254, 101, 150, 'Unhealthy for Sensitive Groups'),
+                (255, 354, 151, 200, 'Unhealthy'),
+                (355, 424, 201, 300, 'Very Unhealthy'),
+                (425, 604, 301, 500, 'Hazardous'),
+            ]
+        },
+        'O3': {
+            'unit': 'ppb',
+            'breakpoints': [
+                (0, 54, 0, 50, 'Good'),
+                (55, 70, 51, 100, 'Moderate'),
+                (71, 85, 101, 150, 'Unhealthy for Sensitive Groups'),
+                (86, 105, 151, 200, 'Unhealthy'),
+                (106, 200, 201, 300, 'Very Unhealthy'),
+            ]
+        },
+        'NO2': {
+            'unit': 'ppb',
+            'breakpoints': [
+                (0, 53, 0, 50, 'Good'),
+                (54, 100, 51, 100, 'Moderate'),
+                (101, 360, 101, 150, 'Unhealthy for Sensitive Groups'),
+                (361, 649, 151, 200, 'Unhealthy'),
+                (650, 1249, 201, 300, 'Very Unhealthy'),
+                (1250, 2049, 301, 500, 'Hazardous'),
+            ]
+        },
+    }
+    
+    # Normalize pollutant name
+    pollutant_upper = pollutant.upper()
+    if 'PM2.5' in pollutant_upper or 'PM 2.5' in pollutant_upper:
+        key = 'PM2.5'
+    elif 'PM10' in pollutant_upper or 'PM 10' in pollutant_upper:
+        key = 'PM10'
+    elif 'O3' in pollutant_upper or 'OZONE' in pollutant_upper:
+        key = 'O3'
+    elif 'NO2' in pollutant_upper or 'NITROGEN DIOXIDE' in pollutant_upper:
+        key = 'NO2'
+    else:
+        # Default: return None if pollutant not supported
+        return {
+            "aqi": None,
+            "category": "Not Available",
+            "color": "#808080",
+            "message": f"AQI calculation not available for {pollutant}"
+        }
+    
+    if key not in aqi_breakpoints:
+        return {
+            "aqi": None,
+            "category": "Not Available",
+            "color": "#808080",
+            "message": f"AQI calculation not available for {pollutant}"
+        }
+    
+    breakpoints = aqi_breakpoints[key]['breakpoints']
+    
+    # Find the appropriate breakpoint
+    for bp_low, bp_high, aqi_low, aqi_high, category in breakpoints:
+        if bp_low <= value <= bp_high:
+            # Linear interpolation
+            aqi = ((aqi_high - aqi_low) / (bp_high - bp_low)) * (value - bp_low) + aqi_low
+            aqi = round(aqi)
+            
+            # Color coding
+            colors = {
+                'Good': '#00e400',
+                'Moderate': '#ffff00',
+                'Unhealthy for Sensitive Groups': '#ff7e00',
+                'Unhealthy': '#ff0000',
+                'Very Unhealthy': '#8f3f97',
+                'Hazardous': '#7e0023'
+            }
+            
+            return {
+                "aqi": int(aqi),
+                "category": category,
+                "color": colors.get(category, '#808080'),
+                "value": value,
+                "pollutant": pollutant
+            }
+    
+    # If value exceeds highest breakpoint
+    return {
+        "aqi": 500,
+        "category": "Hazardous",
+        "color": "#7e0023",
+        "value": value,
+        "pollutant": pollutant
+    }
+
+
+@app.post("/api/aqi/calculate")
+def calculate_aqi_endpoint(request: FilterRequest):
+    """Calculate AQI for filtered data."""
+    df = load_data()
+    
+    df_filtered = filter_data(
+        df,
+        request.date_range,
+        request.pollutants,
+        request.boroughs,
+        request.exclude_outliers
+    )
+    
+    if len(df_filtered) == 0:
+        return {"error": "No data matches the selected filters"}
+    
+    # Get latest values for each pollutant
+    aqi_results = []
+    for pollutant in df_filtered['pollutant'].unique():
+        pollutant_df = df_filtered[df_filtered['pollutant'] == pollutant].copy()
+        if len(pollutant_df) == 0:
+            continue
+        
+        # Use mean value for AQI calculation
+        avg_value = pollutant_df['value'].mean()
+        unit = pollutant_df['unit'].iloc[0] if 'unit' in pollutant_df.columns else ''
+        
+        aqi_result = calculate_aqi(pollutant, avg_value, unit)
+        aqi_result['avg_value'] = float(avg_value)
+        aqi_result['unit'] = unit
+        aqi_results.append(aqi_result)
+    
+    return {"aqi_data": aqi_results}
+
+
+@app.post("/api/trends/analysis")
+def get_trend_analysis(request: FilterRequest):
+    """Get trend analysis (year-over-year, statistical significance)."""
+    try:
+        df = load_data()
+        
+        df_filtered = filter_data(
+            df,
+            request.date_range,
+            request.pollutants,
+            request.boroughs,
+            request.exclude_outliers
+        )
+        
+        if len(df_filtered) == 0:
+            return {"error": "No data matches the selected filters"}
+        
+        if request.agg_level != 'Raw':
+            df_display = aggregate_data(df_filtered, request.agg_level)
+            value_col = 'value_mean'
+        else:
+            df_display = df_filtered.copy()
+            value_col = 'value'
+        
+        # Group by year and pollutant
+        if 'year' not in df_display.columns:
+            return {"error": "Year data not available for trend analysis"}
+        
+        trends = []
+        for pollutant in df_display['pollutant'].unique():
+            try:
+                pollutant_df = df_display[df_display['pollutant'] == pollutant].copy()
+                yearly_avg = pollutant_df.groupby('year')[value_col].mean().reset_index()
+                yearly_avg = yearly_avg.sort_values('year')
+                
+                if len(yearly_avg) < 2:
+                    continue
+                
+                years = yearly_avg['year'].tolist()
+                values = yearly_avg[value_col].tolist()
+                
+                # Filter out NaN values
+                valid_data = [(y, v) for y, v in zip(years, values) if not (np.isnan(v) or np.isinf(v))]
+                if len(valid_data) < 2:
+                    continue
+                
+                years_clean = [y for y, v in valid_data]
+                values_clean = [v for y, v in valid_data]
+                
+                # Calculate trend (linear regression)
+                slope, intercept, r_value, p_value, std_err = stats.linregress(years_clean, values_clean)
+                
+                # Calculate percentage change
+                first_value = values_clean[0]
+                last_value = values_clean[-1]
+                pct_change = ((last_value - first_value) / first_value * 100) if first_value != 0 else 0
+                
+                # Determine trend direction
+                if p_value < 0.05:  # Statistically significant
+                    if slope > 0:
+                        direction = "increasing"
+                        trend_icon = "↑"
+                    else:
+                        direction = "decreasing"
+                        trend_icon = "↓"
+                else:
+                    direction = "stable"
+                    trend_icon = "→"
+                
+                trends.append({
+                    "pollutant": pollutant,
+                    "years": years_clean,
+                    "values": [float(v) for v in values_clean],
+                    "slope": float(slope),
+                    "r_squared": float(r_value ** 2),
+                    "p_value": float(p_value),
+                    "significant": bool(p_value < 0.05),  # Convert numpy bool_ to Python bool
+                    "direction": direction,
+                    "trend_icon": trend_icon,
+                    "pct_change": float(pct_change),
+                    "first_year": int(years_clean[0]),
+                    "last_year": int(years_clean[-1]),
+                })
+            except Exception as e:
+                # Skip this pollutant if there's an error
+                continue
+        
+        return {"trends": trends}
+    except Exception as e:
+        return {"error": f"Error in trend analysis: {str(e)}"}
+
+
+@app.post("/api/seasonal/patterns")
+def get_seasonal_patterns(request: FilterRequest):
+    """Get seasonal patterns analysis."""
+    df = load_data()
+    
+    df_filtered = filter_data(
+        df,
+        request.date_range,
+        request.pollutants,
+        request.boroughs,
+        request.exclude_outliers
+    )
+    
+    if len(df_filtered) == 0:
+        return {"error": "No data matches the selected filters"}
+    
+    if 'season' not in df_filtered.columns:
+        return {"error": "Season data not available"}
+    
+    seasonal_data = []
+    for pollutant in df_filtered['pollutant'].unique():
+        pollutant_df = df_filtered[df_filtered['pollutant'] == pollutant].copy()
+        
+        seasonal_avg = pollutant_df.groupby('season')['value'].agg(['mean', 'std', 'count']).reset_index()
+        seasonal_avg = seasonal_avg.rename(columns={'mean': 'avg_value', 'std': 'std_value'})
+        
+        # Find worst and best seasons
+        worst_season = seasonal_avg.loc[seasonal_avg['avg_value'].idxmax(), 'season']
+        best_season = seasonal_avg.loc[seasonal_avg['avg_value'].idxmin(), 'season']
+        
+        seasonal_data.append({
+            "pollutant": pollutant,
+            "seasons": seasonal_avg.to_dict(orient='records'),
+            "worst_season": worst_season,
+            "best_season": best_season,
+            "unit": pollutant_df['unit'].iloc[0] if 'unit' in pollutant_df.columns else '',
+        })
+    
+    return {"seasonal_patterns": seasonal_data}
+
+
+@app.post("/api/correlation/analysis")
+def get_correlation_analysis(request: FilterRequest):
+    """Get correlation analysis between pollutants."""
+    df = load_data()
+    
+    df_filtered = filter_data(
+        df,
+        request.date_range,
+        request.pollutants,
+        request.boroughs,
+        request.exclude_outliers
+    )
+    
+    if len(df_filtered) == 0:
+        return {"error": "No data matches the selected filters"}
+    
+    # Pivot to get pollutants as columns
+    # Include borough in the index if available to preserve granularity
+    if 'date' in df_filtered.columns:
+        if 'borough' in df_filtered.columns and df_filtered['borough'].notna().any():
+            df_filtered['time_key'] = df_filtered['date'].astype(str) + '_' + df_filtered['borough'].fillna('All').astype(str)
+        else:
+            df_filtered['time_key'] = df_filtered['date'].astype(str)
+        pivot_df = df_filtered.pivot_table(
+            index='time_key',
+            columns='pollutant',
+            values='value',
+            aggfunc='mean'
+        )
+    elif 'year' in df_filtered.columns and 'season' in df_filtered.columns:
+        # Include borough in time key if available to preserve data granularity
+        if 'borough' in df_filtered.columns and df_filtered['borough'].notna().any():
+            df_filtered['time_key'] = (
+                df_filtered['year'].astype(str) + '_' + 
+                df_filtered['season'].astype(str) + '_' + 
+                df_filtered['borough'].fillna('All').astype(str)
+            )
+        else:
+            df_filtered['time_key'] = df_filtered['year'].astype(str) + '_' + df_filtered['season'].astype(str)
+        pivot_df = df_filtered.pivot_table(
+            index='time_key',
+            columns='pollutant',
+            values='value',
+            aggfunc='mean'
+        )
+    else:
+        return {"error": "Insufficient time dimension for correlation analysis"}
+    
+    # Remove columns/rows with insufficient data (need at least 2 data points for correlation)
+    pivot_df = pivot_df.dropna(axis=1, thresh=2).dropna(axis=0, thresh=2)
+    
+    # Calculate correlation matrix using pairwise deletion (only uses rows where both values exist)
+    correlation_matrix = pivot_df.corr(method='pearson', min_periods=2)
+    
+    # Clamp correlation values to valid range [-1, 1] to handle floating point precision issues
+    correlation_matrix = correlation_matrix.clip(lower=-1.0, upper=1.0)
+    
+    # Convert to list format for easier frontend consumption
+    pollutants = correlation_matrix.columns.tolist()
+    correlations = []
+    
+    for i, poll1 in enumerate(pollutants):
+        for j, poll2 in enumerate(pollutants):
+            if i < j:  # Only upper triangle
+                corr_value = correlation_matrix.loc[poll1, poll2]
+                if not np.isnan(corr_value) and not np.isinf(corr_value):
+                    # Ensure value is in valid range (handle floating point precision)
+                    corr_value = max(-1.0, min(1.0, float(corr_value)))
+                    correlations.append({
+                        "pollutant1": poll1,
+                        "pollutant2": poll2,
+                        "correlation": corr_value,
+                        "strength": "strong" if abs(corr_value) > 0.7 else "moderate" if abs(corr_value) > 0.4 else "weak"
+                    })
+    
+    # Sort by absolute correlation
+    correlations.sort(key=lambda x: abs(x['correlation']), reverse=True)
+    
+    # Fill NaN values with 0 for matrix display, but ensure all values are in valid range
+    correlation_matrix_clean = correlation_matrix.fillna(0).clip(lower=-1.0, upper=1.0)
+    
+    return {
+        "correlation_matrix": correlation_matrix_clean.to_dict(),
+        "pollutants": pollutants,
+        "correlations": correlations
+    }
+
+
+@app.post("/api/export/data")
+def export_data(request: FilterRequest):
+    """Export filtered data as JSON."""
+    df = load_data()
+    
+    df_filtered = filter_data(
+        df,
+        request.date_range,
+        request.pollutants,
+        request.boroughs,
+        request.exclude_outliers
+    )
+    
+    if request.agg_level != 'Raw':
+        df_display = aggregate_data(df_filtered, request.agg_level)
+    else:
+        df_display = df_filtered.copy()
+    
+    # Convert to JSON
+    json_data = df_display.to_dict(orient='records')
+    
+    return {"data": json_data, "count": len(json_data)}
 
 
 if __name__ == "__main__":
