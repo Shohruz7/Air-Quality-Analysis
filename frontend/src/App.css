@@ -1190,3 +1190,629 @@ table tbody tr {
     min-width: 100%;
   }
 }
+
+/* Analysis Tab Styles */
+.analysis-tab {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.analysis-subtabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.analysis-subtabs button {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  margin-bottom: -12px;
+}
+
+.analysis-subtabs button:hover {
+  color: var(--accent-color);
+  background: var(--bg-secondary);
+  border-radius: 6px 6px 0 0;
+}
+
+.analysis-subtabs button.active {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+  font-weight: 600;
+}
+
+.analysis-content {
+  min-height: 400px;
+}
+
+.analysis-card {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.analysis-tab h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.analysis-tab .subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.error-message-inline {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 15px;
+  margin: 10px 0;
+  color: #856404;
+}
+
+.error-message-inline p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* AQI Component Styles */
+.aqi-component {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.aqi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.aqi-card {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 15px;
+  border-left: 5px solid;
+}
+
+.aqi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.aqi-header h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.aqi-value {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.aqi-category {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.aqi-details {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.aqi-recommendation {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.aqi-legend {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid var(--border-color);
+}
+
+.aqi-legend h4 {
+  margin-bottom: 10px;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.legend-item {
+  font-size: 14px;
+}
+
+.legend-item span {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+/* Trend Analysis Styles */
+.trend-analysis {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.trends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 15px;
+}
+
+.trend-card {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.trend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.trend-header h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.trend-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trend-icon {
+  font-size: 20px;
+}
+
+.trend-direction {
+  font-weight: 600;
+}
+
+.trend-indicator.increasing {
+  color: #ff6b6b;
+}
+
+.trend-indicator.decreasing {
+  color: #51cf66;
+}
+
+.trend-indicator.stable {
+  color: #868e96;
+}
+
+.significant-badge {
+  background: #667eea;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.trend-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+}
+
+.stat-value {
+  font-weight: 600;
+}
+
+.stat-value.increase {
+  color: #ff6b6b;
+}
+
+.stat-value.decrease {
+  color: #51cf66;
+}
+
+.trend-chart {
+  margin-top: 15px;
+}
+
+/* Seasonal Patterns Styles */
+.seasonal-patterns {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.seasonal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 15px;
+}
+
+.seasonal-card {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.seasonal-header {
+  margin-bottom: 15px;
+}
+
+.seasonal-header h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.seasonal-summary {
+  display: flex;
+  gap: 20px;
+}
+
+.summary-item {
+  font-size: 14px;
+}
+
+.summary-item .label {
+  color: var(--text-secondary);
+  margin-right: 5px;
+}
+
+.summary-item.worst .value {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.summary-item.best .value {
+  color: #51cf66;
+  font-weight: 600;
+}
+
+.seasonal-chart {
+  margin-bottom: 15px;
+}
+
+.seasonal-table {
+  overflow-x: auto;
+}
+
+.seasonal-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.seasonal-table th,
+.seasonal-table td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.seasonal-table th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+}
+
+.seasonal-table .worst-row {
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.seasonal-table .best-row {
+  background: rgba(81, 207, 102, 0.1);
+}
+
+/* Correlation Analysis Styles */
+.correlation-analysis {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.correlation-heatmap {
+  margin-bottom: 30px;
+}
+
+.correlation-heatmap h3 {
+  margin-bottom: 15px;
+}
+
+.heatmap-note {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-left: 3px solid var(--accent-color);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.heatmap-note strong {
+  color: var(--text-primary);
+}
+
+.heatmap-container {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 20px;
+  width: 100%;
+  min-width: 100%;
+}
+
+.heatmap-container .js-plotly-plot {
+  min-width: 100%;
+  width: 100% !important;
+}
+
+.correlation-list h3 {
+  margin-bottom: 15px;
+}
+
+.correlations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.correlation-card {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 15px;
+  border-left: 4px solid;
+}
+
+.correlation-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.pollutant1,
+.pollutant2 {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vs {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.correlation-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.correlation-value .value {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.strength {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.strength.strong {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+}
+
+.strength.moderate {
+  background: rgba(255, 169, 77, 0.2);
+  color: #ffa94d;
+}
+
+.strength.weak {
+  background: rgba(116, 192, 252, 0.2);
+  color: #74c0fc;
+}
+
+.correlation-bar {
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Export Component Styles */
+.export-component {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px var(--shadow);
+  border: 1px solid var(--border-color);
+  margin-top: 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.export-component h3 {
+  margin-bottom: 15px;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.export-btn {
+  padding: 10px 20px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.export-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+}
+
+/* Loading and Error States */
+.loading,
+.no-data-message {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.error {
+  color: #ff6b6b;
+  padding: 15px;
+  background: #ffe6e6;
+  border: 1px solid #ff6b6b;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+.error-message-inline {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 15px;
+  margin: 10px 0;
+  color: #856404;
+}
+
+.error-message-inline p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.no-data-message {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 30px;
+}
+
+/* Math Explanation Styles */
+.math-explanation {
+  margin-bottom: 20px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  padding: 15px;
+  border-left: 4px solid var(--accent-color);
+}
+
+.math-explanation details {
+  cursor: pointer;
+}
+
+.math-explanation summary {
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 5px 0;
+  user-select: none;
+}
+
+.math-explanation summary:hover {
+  color: var(--accent-color);
+}
+
+.explanation-content {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.explanation-content p {
+  margin-bottom: 10px;
+}
+
+.explanation-content strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.explanation-content ul {
+  margin-left: 20px;
+  margin-bottom: 10px;
+}
+
+.explanation-content li {
+  margin-bottom: 8px;
+}
+
+.explanation-content ul ul {
+  margin-top: 5px;
+  margin-left: 25px;
+}
+
+.explanation-content em {
+  color: var(--text-tertiary);
+  font-size: 13px;
+}

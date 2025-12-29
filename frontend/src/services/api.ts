@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
 export interface FilterRequest {
@@ -75,6 +76,31 @@ export const apiService = {
       selected_items: selectedItems,
       single_filter: singleFilter || null,
     });
+    return response.data;
+  },
+
+  getAQI: async (filters: FilterRequest) => {
+    const response = await api.post('/api/aqi/calculate', filters);
+    return response.data;
+  },
+
+  getTrendAnalysis: async (filters: FilterRequest) => {
+    const response = await api.post('/api/trends/analysis', filters);
+    return response.data;
+  },
+
+  getSeasonalPatterns: async (filters: FilterRequest) => {
+    const response = await api.post('/api/seasonal/patterns', filters);
+    return response.data;
+  },
+
+  getCorrelationAnalysis: async (filters: FilterRequest) => {
+    const response = await api.post('/api/correlation/analysis', filters);
+    return response.data;
+  },
+
+  exportData: async (filters: FilterRequest) => {
+    const response = await api.post('/api/export/data', filters);
     return response.data;
   },
 };
