@@ -1,0 +1,165 @@
+.documentation {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  color: var(--text-primary);
+}
+
+.doc-header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.doc-header h2 {
+  margin: 0 0 10px 0;
+  font-size: 2rem;
+  color: var(--text-primary);
+}
+
+.doc-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.doc-section {
+  margin-bottom: 40px;
+  padding: 25px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent-color);
+}
+
+.doc-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doc-section > p {
+  margin: 0 0 15px 0;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.doc-section ul {
+  margin: 15px 0;
+  padding-left: 25px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.doc-section li {
+  margin-bottom: 10px;
+}
+
+.doc-section li strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.analysis-subsection {
+  margin: 25px 0;
+  padding: 20px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.analysis-subsection h4 {
+  margin: 0 0 12px 0;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analysis-subsection p {
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.analysis-subsection p:last-child {
+  margin-bottom: 0;
+}
+
+.analysis-subsection p strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.analysis-subsection ul {
+  margin: 12px 0;
+  padding-left: 25px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.analysis-subsection li {
+  margin-bottom: 8px;
+}
+
+.analysis-subsection li strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.note {
+  margin-top: 15px !important;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-left: 3px solid #ffa94d;
+  border-radius: 4px;
+  font-style: italic;
+  color: var(--text-tertiary) !important;
+  font-size: 0.9rem !important;
+}
+
+/* Dark mode adjustments */
+.dark .doc-section {
+  background: rgba(255, 255, 255, 0.03);
+  border-left-color: var(--accent-color);
+}
+
+.dark .analysis-subsection {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .note {
+  background: rgba(255, 255, 255, 0.05);
+  border-left-color: #ffa94d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .documentation {
+    padding: 15px;
+  }
+
+  .doc-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .doc-section {
+    padding: 20px;
+  }
+
+  .doc-section h3 {
+    font-size: 1.3rem;
+  }
+
+  .analysis-subsection {
+    padding: 15px;
+  }
+}
+
