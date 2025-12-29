@@ -100,3 +100,6 @@ coverage/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Vite build artifacts
+frontend/vite.config.ts.timestamp-*.mjs
