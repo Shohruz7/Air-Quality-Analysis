@@ -54,3 +54,9 @@ export const KPIs: React.FC<KPIsProps> = ({ kpis, unit }) => {
   );
 };
 
+
+
+
+
+
+

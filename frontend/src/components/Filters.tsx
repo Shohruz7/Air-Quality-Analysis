@@ -107,7 +107,7 @@ export const Filters: React.FC<FiltersProps> = ({ metadata, filters, onFiltersCh
       </div>
       {hasActiveFilters && (
         <div className="active-filters-indicator">
-          <small>⚠️ Filters active - showing filtered data. Click "Show Everything" to reset.</small>
+          <small>Filters active - showing filtered data. Click "Show Everything" to reset.</small>
         </div>
       )}
       <div className="filters-row">
