@@ -103,3 +103,6 @@ dmypy.json
 
 # Vite build artifacts
 frontend/vite.config.ts.timestamp-*.mjs
+vercel.md 
+windows.md
+tests.md

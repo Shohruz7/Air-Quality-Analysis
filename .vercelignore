@@ -1,0 +1,43 @@
+# Data files (too large for Vercel)
+data/
+*.parquet
+*.geojson
+
+# Notebooks
+notebooks/
+analysis/
+
+# Python virtual environment
+venv/
+env/
+.venv/
+
+# Node modules (will be installed by Vercel)
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.pyc
+__pycache__/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Environment files (use Vercel dashboard instead)
+.env
+.env.local
+
+# Documentation
+*.md
+!README.md
+
+# Docker
+Dockerfile
+
+# Windows setup
+WINDOWS_SETUP.md
