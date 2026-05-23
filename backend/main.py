@@ -112,17 +112,29 @@ class FilterRequest(BaseModel):
     agg_level: str = "Season"
 
 
+class YearlyComparisonRequest(BaseModel):
+    pollutant: str
+    selected_years: List[int]
+    date_range: Optional[List[str]] = None
+    boroughs: Optional[List[str]] = None
+    exclude_outliers: bool = True
+
+
 def filter_data(df, date_range, pollutants, boroughs, exclude_outliers):
     """Apply filters to dataframe."""
     df_filtered = df.copy()
     
     # Date range filter
     if date_range and len(date_range) == 2:
-        start_date, end_date = date_range
-        df_filtered = df_filtered[
-            (df_filtered['date'] >= pd.Timestamp(start_date)) &
-            (df_filtered['date'] <= pd.Timestamp(end_date))
-        ]
+        try:
+            start_date = pd.Timestamp(date_range[0])
+            end_date = pd.Timestamp(date_range[1])
+            df_filtered = df_filtered[
+                (df_filtered['date'] >= start_date) &
+                (df_filtered['date'] <= end_date)
+            ]
+        except Exception:
+            return df_filtered.iloc[0:0]  # unparseable date → empty result, not 500
     
     # Pollutant filter - only apply if pollutants list is provided and not empty
     if pollutants and len(pollutants) > 0:
@@ -745,6 +757,53 @@ def get_trend_analysis(request: FilterRequest):
         return {"trends": trends}
     except Exception as e:
         return {"error": f"Error in trend analysis: {str(e)}"}
+
+
+@app.post("/api/trends/yearly-comparison")
+def get_yearly_comparison(request: YearlyComparisonRequest):
+    """Get seasonal breakdown per year for year-over-year comparison chart."""
+    try:
+        df = load_data()
+        df_filtered = filter_data(
+            df,
+            request.date_range,
+            [request.pollutant],
+            request.boroughs,
+            request.exclude_outliers,
+        )
+
+        if len(df_filtered) == 0:
+            return {"error": "No data matches the selected filters"}
+
+        if 'season' not in df_filtered.columns or 'year' not in df_filtered.columns:
+            return {"error": "Season or year data not available"}
+
+        SEASON_ORDER = ['Winter', 'Spring', 'Summer', 'Fall', 'Annual']
+        seasons_present = df_filtered['season'].dropna().unique().tolist()
+        # Known seasons first, then anything else (e.g. year strings for annual datasets)
+        ordered_seasons = [s for s in SEASON_ORDER if s in seasons_present] + \
+                          [s for s in sorted(seasons_present) if s not in SEASON_ORDER]
+
+        data = {}
+        for year in request.selected_years:
+            year_df = df_filtered[df_filtered['year'] == year]
+            if len(year_df) == 0:
+                continue
+            season_data = {}
+            for season, grp in year_df.groupby('season'):
+                mean_val = grp['value'].mean()
+                if not (np.isnan(mean_val) or np.isinf(mean_val)):
+                    season_data[season] = round(float(mean_val), 3)
+            if season_data:
+                data[str(year)] = season_data
+
+        return {
+            "pollutant": request.pollutant,
+            "seasons": ordered_seasons,
+            "data": data,
+        }
+    except Exception as e:
+        return {"error": f"Error in yearly comparison: {str(e)}"}
 
 
 @app.post("/api/seasonal/patterns")

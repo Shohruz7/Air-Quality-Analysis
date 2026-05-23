@@ -104,5 +104,16 @@ export const apiService = {
     const response = await api.post('/api/export/data', filters);
     return response.data;
   },
+
+  getYearlyComparison: async (pollutant: string, selectedYears: number[], filters: FilterRequest) => {
+    const response = await api.post('/api/trends/yearly-comparison', {
+      pollutant,
+      selected_years: selectedYears,
+      date_range: filters.date_range,
+      boroughs: filters.boroughs,
+      exclude_outliers: filters.exclude_outliers,
+    });
+    return response.data;
+  },
 };
 

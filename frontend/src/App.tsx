@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Filters } from './components/Filters';
 import { KPIs } from './components/KPIs';
 import { MapTab } from './components/MapTab';
@@ -21,29 +22,29 @@ function App() {
     agg_level: 'Season',
   });
   const [kpis, setKPIs] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'map' | 'timeseries' | 'comparison' | 'analysis' | 'documentation'>('map');
-  const [analysisSubTab, setAnalysisSubTab] = useState<'aqi' | 'trends' | 'seasonal' | 'correlation' | 'export'>('aqi');
+  const [activeTab, setActiveTab] = useState<'map' | 'timeseries' | 'comparison' | 'analysis' | 'documentation'>(
+    () => (localStorage.getItem('activeTab') as any) || 'map'
+  );
+  const [analysisSubTab, setAnalysisSubTab] = useState<'aqi' | 'trends' | 'seasonal' | 'correlation' | 'export'>(
+    () => (localStorage.getItem('analysisSubTab') as any) || 'aqi'
+  );
   const [loading, setLoading] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState<boolean>(
+    () => localStorage.getItem('darkMode') === 'true'
+  );
 
   useEffect(() => {
     const loadMetadata = async () => {
       try {
-        console.log('Loading metadata from API...', 'http://localhost:8000');
         const data = await apiService.getMetadata();
-        console.log('Metadata loaded:', data);
         setMetadata(data);
-        // Set default date range
         if (data.date_range.min && data.date_range.max) {
           setFilters((prev) => ({
             ...prev,
             date_range: [data.date_range.min!, data.date_range.max!],
           }));
         }
-      } catch (error: any) {
-        console.error('Error loading metadata:', error);
-        console.error('Error details:', error?.response?.data || error?.message);
-        // Set loading to false even on error so user can see the error
+      } catch {
         setLoading(false);
       } finally {
         setLoading(false);
@@ -52,11 +53,8 @@ function App() {
 
     // Add timeout fallback
     const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.error('Metadata loading timeout');
-        setLoading(false);
-      }
-    }, 15000); // 15 second timeout
+      if (loading) setLoading(false);
+    }, 15000);
 
     loadMetadata();
 
@@ -64,21 +62,19 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let mounted = true;
     const loadKPIs = async () => {
       try {
         const data = await apiService.getKPIs(filters);
-        setKPIs(data);
-      } catch (error) {
-        console.error('Error loading KPIs:', error);
-      }
+        if (mounted) setKPIs(data.error ? null : data);
+      } catch { /* KPIs are non-critical; failures shown via null state */ }
     };
-
-    if (metadata) {
-      loadKPIs();
-    }
+    if (metadata) loadKPIs();
+    return () => { mounted = false; };
   }, [filters, metadata]);
 
   useEffect(() => {
+    localStorage.setItem('darkMode', String(darkMode));
     if (darkMode) {
       document.documentElement.classList.add('dark');
       document.body.classList.add('dark');
@@ -88,13 +84,16 @@ function App() {
     }
   }, [darkMode]);
 
+  useEffect(() => { localStorage.setItem('activeTab', activeTab); }, [activeTab]);
+  useEffect(() => { localStorage.setItem('analysisSubTab', analysisSubTab); }, [analysisSubTab]);
+
   if (loading) {
     return (
       <div className="app">
         <div className="loading">
           <div>Loading dashboard...</div>
           <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
-            Connecting to API at http://localhost:8000...
+            Connecting to backend API...
           </div>
         </div>
       </div>
@@ -107,10 +106,7 @@ function App() {
         <div className="loading" style={{ color: '#d32f2f' }}>
           <div>Failed to load dashboard data</div>
           <div style={{ marginTop: '10px', fontSize: '14px' }}>
-            Please check that the backend API is running on http://localhost:8000
-          </div>
-          <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
-            Open browser console (F12) for more details
+            Please check that the backend API is running and reachable.
           </div>
         </div>
       </div>
@@ -175,6 +171,7 @@ function App() {
       </div>
 
       <div className="tab-content">
+        <ErrorBoundary key={activeTab} label={activeTab}>
         {activeTab === 'map' && <MapTab filters={filters} />}
         {activeTab === 'timeseries' && <TimeSeriesHeatmapTab filters={filters} />}
         {activeTab === 'comparison' && <ComparisonTab filters={filters} metadata={metadata} />}
@@ -243,6 +240,7 @@ function App() {
             </div>
           </div>
         )}
+        </ErrorBoundary>
       </div>
 
       <KPIs kpis={kpis} unit={unit} />

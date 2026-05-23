@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { FilterRequest, Metadata } from '../services/api';
 
 interface FiltersProps {
@@ -7,8 +7,29 @@ interface FiltersProps {
   onFiltersChange: (filters: FilterRequest) => void;
 }
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const toDate = (s: string | null | undefined) => (s || '').substring(0, 10);
+
 export const Filters: React.FC<FiltersProps> = ({ metadata, filters, onFiltersChange }) => {
+  const [localStart, setLocalStart] = useState(() => toDate(filters.date_range?.[0]));
+  const [localEnd, setLocalEnd] = useState(() => toDate(filters.date_range?.[1]));
+
+  const dateStart = toDate(filters.date_range?.[0]);
+  const dateEnd = toDate(filters.date_range?.[1]);
+
+  // Keep local state in sync when external filters change (e.g. reset button)
+  useEffect(() => {
+    setLocalStart(dateStart);
+    setLocalEnd(dateEnd);
+  }, [dateStart, dateEnd]);
+
   if (!metadata) return <div>Loading metadata...</div>;
+
+  const commitDate = (start: string, end: string) => {
+    if (!DATE_RE.test(start) || !DATE_RE.test(end)) return;
+    if (start > end) return;
+    onFiltersChange({ ...filters, date_range: [start, end] });
+  };
 
   const handleDateRangeChange = (start: string, end: string) => {
     onFiltersChange({
@@ -75,8 +96,8 @@ export const Filters: React.FC<FiltersProps> = ({ metadata, filters, onFiltersCh
     return acc;
   }, {} as Record<string, string>);
 
-  const minDate = metadata.date_range.min || '';
-  const maxDate = metadata.date_range.max || '';
+  const minDate = toDate(metadata.date_range.min);
+  const maxDate = toDate(metadata.date_range.max);
 
   const handleResetFilters = () => {
     onFiltersChange({
@@ -116,18 +137,20 @@ export const Filters: React.FC<FiltersProps> = ({ metadata, filters, onFiltersCh
           <div className="date-inputs">
             <input
               type="date"
-              value={filters.date_range?.[0] || minDate}
+              value={localStart}
               min={minDate}
               max={maxDate}
-              onChange={(e) => handleDateRangeChange(e.target.value, filters.date_range?.[1] || maxDate)}
+              onChange={(e) => setLocalStart(e.target.value)}
+              onBlur={(e) => commitDate(e.target.value, localEnd)}
             />
             <span>to</span>
             <input
               type="date"
-              value={filters.date_range?.[1] || maxDate}
+              value={localEnd}
               min={minDate}
               max={maxDate}
-              onChange={(e) => handleDateRangeChange(filters.date_range?.[0] || minDate, e.target.value)}
+              onChange={(e) => setLocalEnd(e.target.value)}
+              onBlur={(e) => commitDate(localStart, e.target.value)}
             />
           </div>
         </div>

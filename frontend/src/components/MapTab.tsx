@@ -74,42 +74,37 @@ export const MapTab: React.FC<MapTabProps> = ({ filters }) => {
 
   // Reload map data whenever filters change
   useEffect(() => {
-    const loadMapData = async () => {
+    if (!geojson || !filters) return;
+    let mounted = true;
+
+    const timeoutId = setTimeout(async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Use current filters - if pollutants is null/empty, backend will aggregate all
+
         const mapDataResponse = await apiService.getMapData(filters);
-        
+        if (!mounted) return;
+
         if (mapDataResponse && mapDataResponse.data && mapDataResponse.data.length > 0) {
           setMapData(mapDataResponse);
           setSelectedPollutant(mapDataResponse.pollutant || 'All');
-          setMapKey(prev => prev + 1); // Force re-render
-          setError(null); // Clear any previous errors
+          setMapKey(prev => prev + 1);
+          setError(null);
         } else {
-          const errorMsg = mapDataResponse?.message || 'No data available for map with current filters';
-          setError(errorMsg);
+          setError(mapDataResponse?.message || 'No data available for map with current filters');
           setMapData(null);
         }
       } catch (err: any) {
-        console.error('Map loading error:', err);
-        setError(err.message || 'Error loading map data. Please try resetting filters.');
-        setMapData(null);
+        if (mounted) {
+          setError(err.message || 'Error loading map data. Please try resetting filters.');
+          setMapData(null);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
-    };
+    }, 100);
 
-    // Only load if we have geojson and filters are valid
-    if (geojson && filters) {
-      // Add a small delay to debounce rapid filter changes
-      const timeoutId = setTimeout(() => {
-        loadMapData();
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
-    }
+    return () => { mounted = false; clearTimeout(timeoutId); };
   }, [filters, geojson]);
 
   if (!geojson) {
@@ -163,7 +158,7 @@ export const MapTab: React.FC<MapTabProps> = ({ filters }) => {
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
   
-  if (isNaN(minVal) || isNaN(maxVal) || minVal === maxVal) {
+  if (isNaN(minVal) || isNaN(maxVal)) {
     return (
       <div className="no-data-message">
         <p>Invalid data range for map visualization.</p>
@@ -174,12 +169,12 @@ export const MapTab: React.FC<MapTabProps> = ({ filters }) => {
 
   // Create a color scale function
   const getColor = (value: number) => {
-    const normalized = (value - minVal) / (maxVal - minVal);
-    // Blue color scale
     const colors = [
-      '#eff3ff', '#c6dbef', '#9ecae1', '#6baed6', 
+      '#eff3ff', '#c6dbef', '#9ecae1', '#6baed6',
       '#4292c6', '#2171b5', '#08519c', '#08306b'
     ];
+    if (minVal === maxVal) return colors[4]; // single borough → solid mid-blue
+    const normalized = (value - minVal) / (maxVal - minVal);
     const index = Math.min(Math.floor(normalized * colors.length), colors.length - 1);
     return colors[index];
   };

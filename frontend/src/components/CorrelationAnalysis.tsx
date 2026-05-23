@@ -22,10 +22,12 @@ export const CorrelationAnalysis: React.FC<CorrelationAnalysisProps> = ({ filter
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
     const loadCorrelations = async () => {
       try {
         setLoading(true);
         const response = await apiService.getCorrelationAnalysis(filters);
+        if (!mounted) return;
         if (response.correlations) {
           setCorrelations(response.correlations);
           setCorrelationMatrix(response.correlation_matrix);
@@ -34,15 +36,17 @@ export const CorrelationAnalysis: React.FC<CorrelationAnalysisProps> = ({ filter
           setError(response.error || 'Failed to load correlation data');
         }
       } catch (err: any) {
-        const errorMsg = err.response?.data?.error || err.message || 'Error loading correlation data. Please check your connection.';
-        setError(errorMsg);
-        console.error('Correlation loading error:', err);
+        if (mounted) {
+          const errorMsg = err.response?.data?.error || err.message || 'Error loading correlation data. Please check your connection.';
+          setError(errorMsg);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     loadCorrelations();
+    return () => { mounted = false; };
   }, [filters]);
 
   if (loading) return <div className="loading">Loading correlation analysis...</div>;

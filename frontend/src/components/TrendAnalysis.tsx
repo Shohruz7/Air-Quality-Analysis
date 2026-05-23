@@ -22,32 +22,95 @@ interface TrendData {
   last_year: number;
 }
 
+const YOY_COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b'];
+const MAX_YOY_YEARS = 6;
+
+function defaultYears(years: number[]): number[] {
+  if (years.length <= MAX_YOY_YEARS) return [...years];
+  const step = Math.floor(years.length / (MAX_YOY_YEARS - 1));
+  const picks: number[] = [];
+  for (let i = 0; i < years.length; i += step) picks.push(years[i]);
+  if (picks[picks.length - 1] !== years[years.length - 1]) picks.push(years[years.length - 1]);
+  return picks.slice(0, MAX_YOY_YEARS);
+}
+
 export const TrendAnalysis: React.FC<TrendAnalysisProps> = ({ filters }) => {
   const [trends, setTrends] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [yoyPollutant, setYoyPollutant] = useState<string>('');
+  const [yoySelectedYears, setYoySelectedYears] = useState<number[]>([]);
+  const [yoyData, setYoyData] = useState<any>(null);
+  const [yoyLoading, setYoyLoading] = useState(false);
+
   useEffect(() => {
+    let mounted = true;
     const loadTrends = async () => {
       try {
         setLoading(true);
         const response = await apiService.getTrendAnalysis(filters);
+        if (!mounted) return;
         if (response.trends) {
           setTrends(response.trends);
         } else {
           setError(response.error || 'Failed to load trend data');
         }
       } catch (err: any) {
-        const errorMsg = err.response?.data?.error || err.message || 'Error loading trend data. Please check your connection.';
-        setError(errorMsg);
-        console.error('Trend loading error:', err);
+        if (mounted) {
+          const errorMsg = err.response?.data?.error || err.message || 'Error loading trend data. Please check your connection.';
+          setError(errorMsg);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     loadTrends();
+    return () => { mounted = false; };
   }, [filters]);
+
+  // Initialise YoY controls once trends load — prefer a pollutant with many years of data
+  useEffect(() => {
+    if (trends.length === 0) return;
+    const best = trends.reduce((a, b) => b.years.length > a.years.length ? b : a, trends[0]);
+    setYoyPollutant(best.pollutant);
+    setYoySelectedYears(defaultYears(best.years));
+  }, [trends]);
+
+  // Fetch YoY data whenever pollutant or selected years change
+  useEffect(() => {
+    if (!yoyPollutant || yoySelectedYears.length === 0) return;
+    let mounted = true;
+    const fetchYoY = async () => {
+      setYoyLoading(true);
+      try {
+        const result = await apiService.getYearlyComparison(yoyPollutant, yoySelectedYears, filters);
+        if (mounted) setYoyData(result.error ? null : result);
+      } catch {
+        if (mounted) setYoyData(null);
+      } finally {
+        if (mounted) setYoyLoading(false);
+      }
+    };
+    fetchYoY();
+    return () => { mounted = false; };
+  }, [yoyPollutant, yoySelectedYears, filters]);
+
+  const handlePollutantChange = (pollutant: string) => {
+    setYoyPollutant(pollutant);
+    const trend = trends.find(t => t.pollutant === pollutant);
+    if (trend) setYoySelectedYears(defaultYears(trend.years));
+    setYoyData(null);
+  };
+
+  const toggleYear = (year: number) => {
+    setYoySelectedYears(prev => {
+      if (prev.includes(year)) return prev.length > 1 ? prev.filter(y => y !== year) : prev;
+      if (prev.length >= MAX_YOY_YEARS) return prev;
+      return [...prev].concat(year).sort((a, b) => a - b);
+    });
+  };
 
   if (loading) return <div className="loading">Loading trend analysis...</div>;
   if (error) return <div className="error-message-inline"><p>{error}</p></div>;
@@ -111,10 +174,9 @@ export const TrendAnalysis: React.FC<TrendAnalysisProps> = ({ filters }) => {
       <div className="trends-grid">
         {trends.map((trend, idx) => {
           // Create trend line data
-          const trendLine = trend.years.map(year => {
-            const yearIndex = trend.years.indexOf(year);
-            return trend.values[0] + trend.slope * (year - trend.years[0]);
-          });
+          const trendLine = trend.years.map(year =>
+            trend.values[0] + trend.slope * (year - trend.years[0])
+          );
 
           return (
             <div key={idx} className="trend-card">
@@ -186,6 +248,81 @@ export const TrendAnalysis: React.FC<TrendAnalysisProps> = ({ filters }) => {
             </div>
           );
         })}
+      </div>
+
+      {/* Year-over-Year Comparison */}
+      <div className="yoy-comparison">
+        <h3>Year-over-Year Comparison</h3>
+        <p className="subtitle">Compare seasonal patterns across selected years for a single pollutant</p>
+
+        <div className="yoy-controls">
+          <div className="yoy-control-row">
+            <label className="yoy-label">Pollutant</label>
+            <select
+              className="yoy-select"
+              value={yoyPollutant}
+              onChange={e => handlePollutantChange(e.target.value)}
+            >
+              {trends.map(t => (
+                <option key={t.pollutant} value={t.pollutant}>{t.pollutant}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="yoy-control-row">
+            <label className="yoy-label">Years (max {MAX_YOY_YEARS})</label>
+            <div className="yoy-year-toggles">
+              {(trends.find(t => t.pollutant === yoyPollutant)?.years ?? []).map(year => (
+                <button
+                  key={year}
+                  className={`yoy-year-btn ${yoySelectedYears.includes(year) ? 'active' : ''}`}
+                  style={yoySelectedYears.includes(year)
+                    ? { backgroundColor: YOY_COLORS[yoySelectedYears.indexOf(year)], borderColor: YOY_COLORS[yoySelectedYears.indexOf(year)], color: '#fff' }
+                    : {}}
+                  onClick={() => toggleYear(year)}
+                >
+                  {year}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {yoyLoading && <div className="loading">Loading comparison...</div>}
+
+        {!yoyLoading && yoyData && yoyData.seasons && (
+          <Plot
+            data={yoySelectedYears
+              .filter(year => yoyData.data[String(year)])
+              .map((year, idx) => ({
+                x: yoyData.seasons,
+                y: yoyData.seasons.map((s: string) => yoyData.data[String(year)]?.[s] ?? null),
+                type: 'scatter' as const,
+                mode: 'lines+markers' as const,
+                name: String(year),
+                line: { color: YOY_COLORS[idx % YOY_COLORS.length], width: 2 },
+                marker: { size: 8, color: YOY_COLORS[idx % YOY_COLORS.length] },
+                connectgaps: false,
+              }))}
+            layout={{
+              height: 400,
+              margin: { t: 20, b: 60, l: 70, r: 20 },
+              xaxis: { title: 'Season', fixedrange: true },
+              yaxis: {
+                title: yoyPollutant.length > 30 ? yoyPollutant.substring(0, 30) + '…' : yoyPollutant,
+                fixedrange: true,
+              },
+              legend: { orientation: 'h', y: -0.2 },
+              dragmode: false,
+            }}
+            config={{ displayModeBar: false, doubleClick: false, scrollZoom: false }}
+            style={{ width: '100%' }}
+          />
+        )}
+
+        {!yoyLoading && !yoyData && yoySelectedYears.length > 0 && (
+          <div className="no-data-message"><p>No data available for the selected combination.</p></div>
+        )}
       </div>
     </div>
   );

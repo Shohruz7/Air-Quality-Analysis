@@ -15,26 +15,35 @@ export const TimeSeriesHeatmapTab: React.FC<TimeSeriesHeatmapTabProps> = ({ filt
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
     const loadData = async () => {
       try {
         setLoading(true);
-        const [heatmapResponse, timeseriesResponse, filteredResponse] = await Promise.all([
+        const [heatmapResult, timeseriesResult, filteredResult] = await Promise.allSettled([
           apiService.getHeatmapData(filters),
           apiService.getTimeseriesData(filters),
           apiService.getFilteredData(filters),
         ]);
 
-        setHeatmapData(heatmapResponse);
-        setTimeseriesData(timeseriesResponse);
-        setTableData(filteredResponse.data || []);
+        if (!mounted) return;
+
+        if (heatmapResult.status === 'fulfilled') setHeatmapData(heatmapResult.value);
+        if (timeseriesResult.status === 'fulfilled') setTimeseriesData(timeseriesResult.value);
+        if (filteredResult.status === 'fulfilled') setTableData(filteredResult.value.data || []);
+
+        const allFailed = [heatmapResult, timeseriesResult, filteredResult].every(
+          r => r.status === 'rejected'
+        );
+        if (allFailed) setError('Failed to load data. Please check your connection.');
       } catch (err: any) {
-        setError(err.message || 'Error loading data');
+        if (mounted) setError(err.message || 'Error loading data');
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     loadData();
+    return () => { mounted = false; };
   }, [filters]);
 
   if (loading) return <div>Loading...</div>;

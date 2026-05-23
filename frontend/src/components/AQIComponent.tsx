@@ -23,25 +23,29 @@ export const AQIComponent: React.FC<AQIComponentProps> = ({ filters }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
     const loadAQI = async () => {
       try {
         setLoading(true);
         const response = await apiService.getAQI(filters);
+        if (!mounted) return;
         if (response.aqi_data) {
           setAqiData(response.aqi_data);
         } else {
           setError(response.error || 'Failed to load AQI data');
         }
       } catch (err: any) {
-        const errorMsg = err.response?.data?.error || err.message || 'Error loading AQI data. Please check your connection.';
-        setError(errorMsg);
-        console.error('AQI loading error:', err);
+        if (mounted) {
+          const errorMsg = err.response?.data?.error || err.message || 'Error loading AQI data. Please check your connection.';
+          setError(errorMsg);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     loadAQI();
+    return () => { mounted = false; };
   }, [filters]);
 
   if (loading) return <div className="loading">Loading AQI data...</div>;

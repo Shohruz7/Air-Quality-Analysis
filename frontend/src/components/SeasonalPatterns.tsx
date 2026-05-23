@@ -26,25 +26,29 @@ export const SeasonalPatterns: React.FC<SeasonalPatternsProps> = ({ filters }) =
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
     const loadSeasonalData = async () => {
       try {
         setLoading(true);
         const response = await apiService.getSeasonalPatterns(filters);
+        if (!mounted) return;
         if (response.seasonal_patterns) {
           setSeasonalData(response.seasonal_patterns);
         } else {
           setError(response.error || 'Failed to load seasonal data');
         }
       } catch (err: any) {
-        const errorMsg = err.response?.data?.error || err.message || 'Error loading seasonal data. Please check your connection.';
-        setError(errorMsg);
-        console.error('Seasonal loading error:', err);
+        if (mounted) {
+          const errorMsg = err.response?.data?.error || err.message || 'Error loading seasonal data. Please check your connection.';
+          setError(errorMsg);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     loadSeasonalData();
+    return () => { mounted = false; };
   }, [filters]);
 
   if (loading) return <div className="loading">Loading seasonal patterns...</div>;

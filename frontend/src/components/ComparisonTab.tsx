@@ -17,56 +17,54 @@ export const ComparisonTab: React.FC<ComparisonTabProps> = ({ filters, metadata 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Allow comparison if at least 2 items are selected
-    // For boroughs comparison, singleFilter (pollutant) is optional
-    // For pollutants comparison, singleFilter (borough) is optional
-    if (selectedItems.length >= 2) {
-      loadComparisonData();
-    } else {
+    if (selectedItems.length < 2) {
       setComparisonData(null);
+      return;
     }
-  }, [comparisonType, selectedItems, singleFilter, filters]);
+
+    let mounted = true;
+    const availablePollutants = metadata?.pollutants ?? [];
+
+    const loadComparisonData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        let effectiveFilter = singleFilter;
+        if (!effectiveFilter) {
+          if (comparisonType === 'pollutants') {
+            effectiveFilter = 'All';
+          } else {
+            effectiveFilter = filters.pollutants && filters.pollutants.length > 0
+              ? filters.pollutants[0]
+              : availablePollutants[0] || '';
+          }
+        }
+
+        if (!effectiveFilter && comparisonType === 'boroughs') {
+          if (mounted) setError('Please select a pollutant to compare boroughs');
+          return;
+        }
+
+        const data = await apiService.getComparisonData(
+          filters, comparisonType, selectedItems, effectiveFilter
+        );
+        if (mounted) setComparisonData(data);
+      } catch (err: any) {
+        if (mounted) setError(err.message || 'Error loading comparison data');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadComparisonData();
+    return () => { mounted = false; };
+  }, [comparisonType, selectedItems, singleFilter, filters, metadata]);
 
   if (!metadata) return <div>Loading metadata...</div>;
 
   const availableBoroughs = metadata.boroughs;
   const availablePollutants = metadata.pollutants;
-
-  const loadComparisonData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      // If singleFilter is empty, use 'All' for pollutants comparison or first available for boroughs
-      let effectiveFilter = singleFilter;
-      if (!effectiveFilter) {
-        if (comparisonType === 'pollutants') {
-          effectiveFilter = 'All'; // Compare pollutants across all boroughs
-        } else {
-          // For boroughs comparison, we need a pollutant - use first available or from filters
-          effectiveFilter = filters.pollutants && filters.pollutants.length > 0 
-            ? filters.pollutants[0] 
-            : availablePollutants[0] || '';
-        }
-      }
-      
-      if (!effectiveFilter && comparisonType === 'boroughs') {
-        setError('Please select a pollutant to compare boroughs');
-        return;
-      }
-      
-      const data = await apiService.getComparisonData(
-        filters,
-        comparisonType,
-        selectedItems,
-        effectiveFilter
-      );
-      setComparisonData(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading comparison data');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleComparisonTypeChange = (type: 'boroughs' | 'pollutants') => {
     setComparisonType(type);
