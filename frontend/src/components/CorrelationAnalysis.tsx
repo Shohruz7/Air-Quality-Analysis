@@ -56,41 +56,28 @@ export const CorrelationAnalysis: React.FC<CorrelationAnalysisProps> = ({ filter
     );
   }
 
-  // Prepare matrix data for heatmap
-  // Note: matrixData[i][j] represents correlation between pollutants[i] and pollutants[j]
-  const matrixData = pollutants.map((p1, i) =>
-    pollutants.map((p2, j) => {
-      if (i === j) return 1.0; // Diagonal is always 1.0 (self-correlation)
-      const corr = correlations.find(c => 
-        (c.pollutant1 === p1 && c.pollutant2 === p2) ||
-        (c.pollutant1 === p2 && c.pollutant2 === p1)
-      );
-      // Ensure we return the actual correlation value, clamped to [-1, 1] range
-      if (corr) {
-        const val = Number(corr.correlation);
-        // Clamp to valid correlation range
-        return Math.max(-1, Math.min(1, val));
-      }
-      return 0; // No correlation found = 0
-    })
-  );
-
-  // Create truncated labels for display
   const truncateLabel = (label: string, maxLength: number) => {
     if (label.length <= maxLength) return label;
     return label.substring(0, maxLength - 3) + '...';
   };
 
-  // X-axis labels (horizontal, can be longer)
   const xLabels = pollutants.map(p => truncateLabel(p, 25));
-  
-  // Y-axis labels (vertical, allow longer labels to fill space)
   const yLabels = pollutants.map(p => truncateLabel(p, 35));
-  
-  // Calculate dynamic left margin based on longest y-label
-  // Use minimal margin, let labels fill the space
+  const positions = pollutants.map((_, i) => i);
   const maxYLabelLength = Math.max(...yLabels.map(l => l.length));
   const leftMargin = Math.max(120, maxYLabelLength * 7 + 60);
+
+  // Build matrix directly from correlationMatrix dict (pandas to_dict() is column-oriented:
+  // correlationMatrix[col][row] = value). Diagonal set to null — self-correlations are
+  // always 1.0 and redundant; null renders as a blank cell in Plotly.
+  const matrixData = pollutants.map(p1 =>
+    pollutants.map(p2 => {
+      if (p1 === p2) return null;
+      const val = correlationMatrix?.[p1]?.[p2];
+      if (val === undefined || val === null || isNaN(Number(val))) return null;
+      return Math.max(-1, Math.min(1, Number(val)));
+    })
+  );
 
   const getStrengthColor = (strength: string) => {
     switch (strength) {
@@ -137,83 +124,59 @@ export const CorrelationAnalysis: React.FC<CorrelationAnalysisProps> = ({ filter
           <Plot
             data={[
               {
+                // Use numeric positions for x/y so tickvals/ticktext map unambiguously.
+                // matrixData[i][j] = corr(pollutants[i], pollutants[j]),
+                // rendered at (x=j, y=i) → color and annotation share the same index.
                 z: matrixData,
-                x: xLabels,
-                y: yLabels,
+                x: positions,
+                y: positions,
                 type: 'heatmap',
-                // Custom colorscale with explicit mapping
-                // Plotly linearly maps z values to colorscale positions:
-                // position = (z - zmin) / (zmax - zmin)
-                // For zmin=-1, zmax=1: -1→0, 0→0.5, 1→1.0
-                // Add more stops to ensure smooth and correct mapping
                 colorscale: [
-                  [0, '#4dabf7'],      // Position 0.0 = Blue for value -1.0
-                  [0.25, '#74c0fc'],   // Position 0.25 = Light blue for value -0.5
-                  [0.5, '#ffffff'],    // Position 0.5 = White for value 0.0
-                  [0.75, '#ffa94d'],   // Position 0.75 = Light red for value 0.5
-                  [1, '#ff6b6b']       // Position 1.0 = Red for value 1.0
+                  [0,    '#2166ac'],  // -1.0 → dark blue
+                  [0.25, '#92c5de'],  // -0.5 → light blue
+                  [0.5,  '#f7f7f7'],  //  0.0 → white
+                  [0.75, '#f4a582'],  // +0.5 → light red
+                  [1,    '#b2182b'],  // +1.0 → dark red
                 ],
                 zmin: -1,
                 zmax: 1,
-                zauto: false,  // Don't auto-scale, use explicit range
-                text: matrixData.map((row, i) => 
-                  row.map((val, j) => {
-                    // Show value for debugging - can see actual numbers in cells
-                    return val.toFixed(2);
-                  })
-                ),
+                zauto: false,
+                text: matrixData.map(row => row.map(v => v === null ? '' : v.toFixed(2))),
                 texttemplate: '%{text}',
                 textfont: { size: 10 },
-                // Create hover text with full names (no truncation)
-                hovertext: pollutants.map((p1, i) => 
-                  pollutants.map((p2, j) => 
-                    `${pollutants[j]} vs ${pollutants[i]}<br>Correlation: ${matrixData[i][j].toFixed(3)}`
-                  )
+                hovertext: pollutants.map((p1, i) =>
+                  pollutants.map((p2, j) => {
+                    const v = matrixData[i][j];
+                    return v === null ? `${p1}` : `${p1} vs ${p2}<br>Correlation: ${v.toFixed(3)}`;
+                  })
                 ),
                 hovertemplate: '%{hovertext}<extra></extra>',
-                // Show full names in hover, truncated names on axes
               },
             ]}
             layout={{
-              title: '',
               height: Math.max(500, pollutants.length * 50),
-              margin: { 
-                t: 30, 
-                b: Math.max(150, pollutants.length * 8), 
-                l: leftMargin,
-                r: 30,
-                pad: 5
-              },
-              xaxis: { 
-                side: 'bottom', 
-                tickangle: -45, 
+              margin: { t: 30, b: Math.max(150, pollutants.length * 8), l: leftMargin, r: 30 },
+              xaxis: {
+                tickmode: 'array',
+                tickvals: positions,
+                ticktext: xLabels,
+                tickangle: -45,
+                tickfont: { size: 9 },
                 fixedrange: true,
                 automargin: false,
-                tickfont: { size: 9 },
-                tickmode: 'array',
-                tickvals: pollutants.map((_, i) => i),
-                ticktext: xLabels
               },
-              yaxis: { 
-                autorange: 'reversed', 
+              yaxis: {
+                tickmode: 'array',
+                tickvals: positions,
+                ticktext: yLabels,
+                autorange: 'reversed',
+                tickfont: { size: 10 },
                 fixedrange: true,
                 automargin: true,
-                tickfont: { size: 10 },
-                tickmode: 'array',
-                tickvals: pollutants.map((_, i) => i),
-                ticktext: yLabels,
-                title: {
-                  standoff: 10
-                },
-                side: 'left'
               },
               dragmode: false,
             }}
-            config={{ 
-              displayModeBar: true,
-              doubleClick: false,
-              scrollZoom: false,
-            }}
+            config={{ displayModeBar: true, doubleClick: false, scrollZoom: false }}
             style={{ width: '100%', minHeight: '500px' }}
           />
           </div>

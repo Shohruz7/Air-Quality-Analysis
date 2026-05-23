@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
-import { FilterRequest, Metadata } from '../services/api';
+import type { FilterRequest, Metadata } from '../services/api';
 import { apiService } from '../services/api';
 
 interface ComparisonTabProps {

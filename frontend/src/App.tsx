@@ -141,14 +141,6 @@ function App() {
         </div>
       </header>
 
-      <Filters
-        metadata={metadata}
-        filters={filters}
-        onFiltersChange={setFilters}
-      />
-
-      <KPIs kpis={kpis} unit={unit} />
-
       <div className="tabs">
         <button
           className={activeTab === 'map' ? 'active' : ''}
@@ -221,7 +213,7 @@ function App() {
                 Export
               </button>
             </div>
-            
+
             <div className="analysis-content">
               {analysisSubTab === 'aqi' && (
                 <div className="analysis-card">
@@ -252,6 +244,14 @@ function App() {
           </div>
         )}
       </div>
+
+      <KPIs kpis={kpis} unit={unit} />
+
+      <Filters
+        metadata={metadata}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
 
       <footer className="app-footer">
         <p>

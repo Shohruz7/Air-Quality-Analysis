@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilterRequest, Metadata } from '../services/api';
+import type { FilterRequest, Metadata } from '../services/api';
 
 interface FiltersProps {
   metadata: Metadata | null;
