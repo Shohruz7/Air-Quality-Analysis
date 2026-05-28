@@ -107,7 +107,6 @@ vercel.md
 windows.md
 tests.md
 
-# Allow frontend static data files (client-side deployment needs these in git)
-!frontend/public/data/
-!frontend/public/data/measurements.csv
-!frontend/public/data/nyc-boroughs.geojson
+# Allow frontend data files (client-side deployment needs these in git)
+!frontend/src/assets/measurements.csv
+!frontend/src/assets/nyc-boroughs.geojson

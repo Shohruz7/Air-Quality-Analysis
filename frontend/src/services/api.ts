@@ -1,5 +1,6 @@
 import { getData } from './dataStore';
 import type { Row } from './dataStore';
+import geoUrl from '../assets/nyc-boroughs.geojson?url';
 
 // ── Types (unchanged public interface) ──────────────────────────────────────
 
@@ -310,7 +311,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
   },
 
   getGeoJSON: async () => {
-    const res = await fetch('/data/nyc-boroughs.geojson');
+    const res = await fetch(geoUrl);
     if (!res.ok) throw new Error('GeoJSON not found');
     return res.json();
   },

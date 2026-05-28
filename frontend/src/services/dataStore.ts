@@ -1,3 +1,5 @@
+import csvUrl from '../assets/measurements.csv?url';
+
 export interface Row {
   timestamp: string;
   date: string;
@@ -62,15 +64,15 @@ function parseCSV(text: string): Row[] {
 export async function getData(): Promise<Row[]> {
   if (cache) return cache;
   if (loadingPromise) return loadingPromise;
-  loadingPromise = fetch('/data/measurements.csv')
+  loadingPromise = fetch(csvUrl)
     .then(r => {
-      if (!r.ok) throw new Error(`HTTP ${r.status} fetching /data/measurements.csv`);
+      if (!r.ok) throw new Error(`HTTP ${r.status} fetching CSV`);
       return r.text();
     })
     .then(text => {
       cache = parseCSV(text);
       if (cache.length === 0)
-        console.error('[dataStore] 0 rows parsed — server may have returned HTML instead of CSV. First 200 chars:', text.slice(0, 200));
+        console.error('[dataStore] 0 rows — server may have returned HTML instead of CSV. First 200 chars:', text.slice(0, 200));
       else
         console.log(`[dataStore] Loaded ${cache.length} rows`);
       loadingPromise = null;
