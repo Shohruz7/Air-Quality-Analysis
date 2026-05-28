@@ -15,6 +15,7 @@ export interface Row {
 }
 
 let cache: Row[] | null = null;
+let loadingPromise: Promise<Row[]> | null = null;
 
 function parseCSV(text: string): Row[] {
   const lines = text.split('\n');
@@ -39,7 +40,8 @@ function parseCSV(text: string): Row[] {
 
     rows.push({
       timestamp: get('timestamp'),
-      date: get('date'),
+      // Trim to YYYY-MM-DD in case pandas wrote a datetime string
+      date: get('date').substring(0, 10),
       year: parseInt(get('year'), 10),
       month: parseInt(get('month'), 10),
       season: get('season'),
@@ -59,10 +61,16 @@ function parseCSV(text: string): Row[] {
 
 export async function getData(): Promise<Row[]> {
   if (cache) return cache;
-  const text = await fetch('/data/measurements.csv').then(r => {
-    if (!r.ok) throw new Error(`Failed to load data: ${r.status}`);
-    return r.text();
-  });
-  cache = parseCSV(text);
-  return cache;
+  if (loadingPromise) return loadingPromise;
+  loadingPromise = fetch('/data/measurements.csv')
+    .then(r => {
+      if (!r.ok) throw new Error(`Failed to load data: ${r.status}`);
+      return r.text();
+    })
+    .then(text => {
+      cache = parseCSV(text);
+      loadingPromise = null;
+      return cache;
+    });
+  return loadingPromise;
 }

@@ -265,7 +265,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
     const rows = await getData();
     const dates = rows.map(r => r.date).filter(Boolean).sort();
     const pollutants = [...new Set(rows.map(r => r.pollutant))].sort();
-    const boroughs = [...new Set(rows.map(r => r.borough).filter(b => b && b !== 'Unknown'))].sort();
+    const boroughs = [...new Set(rows.map(r => r.borough).filter(b => b && b !== 'Unknown' && b !== 'All'))].sort();
     return {
       total_records: rows.length,
       date_range: { min: dates[0] ?? null, max: dates[dates.length - 1] ?? null },
@@ -317,7 +317,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
 
   getMapData: async (filters: FilterRequest) => {
     const rows = await getData();
-    const filtered = filterData(rows, filters).filter(r => r.borough && r.borough !== 'Unknown');
+    const filtered = filterData(rows, filters).filter(r => r.borough && r.borough !== 'Unknown' && r.borough !== 'All');
     if (!filtered.length) return { data: [], message: 'No data available for map' };
 
     const byBorough = groupBy(filtered, r => r.borough);
@@ -331,8 +331,8 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
 
   getHeatmapData: async (filters: FilterRequest) => {
     const rows = await getData();
-    const filtered = filterData(rows, filters).filter(r => r.borough && r.borough !== 'Unknown');
-    if (!filtered.length) return { data: {}, message: 'No data available for heatmap' };
+    const filtered = filterData(rows, filters).filter(r => r.borough && r.borough !== 'Unknown' && r.borough !== 'All');
+    if (!filtered.length) return { data: {}, boroughs: [], pollutants: [], unit: '', message: 'No data available for heatmap' };
 
     const boroughOrder = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'];
     const boroughSet = new Set(filtered.map(r => r.borough));
