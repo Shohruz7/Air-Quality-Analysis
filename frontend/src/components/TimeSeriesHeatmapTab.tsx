@@ -142,6 +142,24 @@ export const TimeSeriesHeatmapTab: React.FC<TimeSeriesHeatmapTabProps> = ({ filt
 
     const { data, x_col, value_col, unit } = timeseriesData;
 
+    // Build a globally sorted x-axis order so all traces share the same category sequence
+    const sortXValues = (vals: string[]): string[] => {
+      return [...new Set(vals)].sort((a, b) => {
+        const na = parseInt(a), nb = parseInt(b);
+        if (!isNaN(na) && !isNaN(nb) && String(na) === a && String(nb) === b) return na - nb;
+        const SEASON_MONTH: Record<string, number> = { Winter: 1, Spring: 3, Summer: 6, Fall: 9, Annual: 12 };
+        const am = a.match(/^(\w+)\s+(\d{4})$/);
+        const bm = b.match(/^(\w+)\s+(\d{4})$/);
+        if (am && bm) {
+          const yearDiff = parseInt(am[2]) - parseInt(bm[2]);
+          if (yearDiff !== 0) return yearDiff;
+          return (SEASON_MONTH[am[1]] ?? 12) - (SEASON_MONTH[bm[1]] ?? 12);
+        }
+        return a.localeCompare(b);
+      });
+    };
+    const allXSorted = sortXValues(data.map((d: any) => String(d[x_col])));
+
     // Group by pollutant_short for different lines
     const pollutants = [...new Set(data.map((d: any) => d.pollutant_short))] as string[];
     const traces = pollutants.map((pollutant: string) => {
@@ -162,8 +180,11 @@ export const TimeSeriesHeatmapTab: React.FC<TimeSeriesHeatmapTabProps> = ({ filt
         xaxis: {
           title: 'Time Period',
           type: 'category' as const,
+          categoryorder: 'array' as const,
+          categoryarray: allXSorted,
           tickangle: -45,
           automargin: true,
+          nticks: 25,
         },
         yaxis: { title: `Value (${unit})` },
         hovermode: 'closest',
