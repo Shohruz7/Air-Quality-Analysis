@@ -243,13 +243,15 @@ function App() {
         </ErrorBoundary>
       </div>
 
-      <KPIs kpis={kpis} unit={unit} />
+      {activeTab !== 'documentation' && <KPIs kpis={kpis} unit={unit} />}
 
-      <Filters
-        metadata={metadata}
-        filters={filters}
-        onFiltersChange={setFilters}
-      />
+      {activeTab !== 'documentation' && (
+        <Filters
+          metadata={metadata}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+      )}
 
       <footer className="app-footer">
         <p>
