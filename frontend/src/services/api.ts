@@ -95,7 +95,7 @@ function percentile(vals: number[], p: number): number {
 function stddev(vals: number[]): number {
   if (vals.length < 2) return 0;
   const m = mean(vals);
-  return Math.sqrt(vals.reduce((a, v) => a + (v - m) ** 2, 0) / vals.length);
+  return Math.sqrt(vals.reduce((a, v) => a + (v - m) ** 2, 0) / (vals.length - 1));
 }
 
 function aggregateData(rows: Row[], aggLevel: string): AggRow[] {
@@ -364,14 +364,22 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
     const aggLevel = filters.agg_level ?? 'Season';
     const agg = aggLevel !== 'Raw' ? aggregateData(filtered, aggLevel) : filtered.map(r => ({ ...r, value_mean: r.value }));
 
-    const shortenPollutant = (p: string) => normalizePollutant(p).slice(0, 15);
+    const POLLUTANT_SHORT: Record<string, string> = {
+      'Fine particles (PM 2.5)': 'PM2.5',
+      'Nitrogen dioxide (NO2)': 'NO2',
+      'Ozone (O3)': 'O3',
+      'Sulfur dioxide (SO2)': 'SO2',
+      'Black carbon': 'Black Carbon',
+      'Nitric oxide (NO)': 'NO',
+    };
+    const shortenPollutant = (p: string) => POLLUTANT_SHORT[p] ?? normalizePollutant(p).slice(0, 20);
     const SEASON_MONTH: Record<string, number> = { Winter: 1, Spring: 3, Summer: 6, Fall: 9, Annual: 1 };
 
     type TSRow = { date_str?: string; year?: number; date?: string; pollutant_short: string; value_mean: number; sort_key?: number };
     let tsData: TSRow[] = [];
 
     if (aggLevel === 'Season') {
-      const groups = groupBy(agg as AggRow[], r => `${r.season}|${r.year}|${shortenPollutant(r.pollutant)}`);
+      const groups = groupBy(agg as AggRow[], r => `${r.season}|${r.year}|${r.pollutant}`);
       for (const [, grp] of groups) {
         const rep = grp[0] as AggRow;
         const seasonMonth = SEASON_MONTH[rep.season] ?? 1;
@@ -387,7 +395,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
     }
 
     if (aggLevel === 'Year') {
-      const groups = groupBy(agg as AggRow[], r => `${r.year}|${shortenPollutant(r.pollutant)}`);
+      const groups = groupBy(agg as AggRow[], r => `${r.year}|${r.pollutant}`);
       for (const [, grp] of groups) {
         const rep = grp[0] as AggRow;
         tsData.push({
@@ -402,7 +410,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
     }
 
     // Month or Raw
-    const groups = groupBy(agg as AggRow[], r => `${r.date}|${shortenPollutant(r.pollutant)}`);
+    const groups = groupBy(agg as AggRow[], r => `${r.date}|${r.pollutant}`);
     for (const [, grp] of groups) {
       const rep = grp[0] as AggRow;
       tsData.push({
@@ -447,7 +455,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
 
   getAQI: async (filters: FilterRequest) => {
     const rows = await getData();
-    const filtered = filterData(rows, filters);
+    const filtered = filterData(rows, filters).filter(r => r.borough !== 'All');
     if (!filtered.length) return { error: 'No data matches the selected filters' };
 
     const byPollutant = groupBy(filtered, r => r.pollutant);
@@ -513,8 +521,11 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
       });
 
       if (!seasons.length) continue;
-      const worst_season = seasons.reduce((a, b) => a.avg_value > b.avg_value ? a : b).season;
-      const best_season = seasons.reduce((a, b) => a.avg_value < b.avg_value ? a : b).season;
+      const STANDARD_SEASONS = new Set(['Winter', 'Spring', 'Summer', 'Fall']);
+      const standardSeasons = seasons.filter(s => STANDARD_SEASONS.has(s.season));
+      const candidates = standardSeasons.length ? standardSeasons : seasons;
+      const worst_season = candidates.reduce((a, b) => a.avg_value > b.avg_value ? a : b).season;
+      const best_season = candidates.reduce((a, b) => a.avg_value < b.avg_value ? a : b).season;
       seasonal_patterns.push({ pollutant, seasons, worst_season, best_season, unit: '' });
     }
 
@@ -523,7 +534,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
 
   getCorrelationAnalysis: async (filters: FilterRequest) => {
     const rows = await getData();
-    const filtered = filterData(rows, filters);
+    const filtered = filterData(rows, filters).filter(r => r.borough !== 'All');
     if (!filtered.length) return { error: 'No data matches the selected filters' };
 
     // Build pivot: time_key → pollutant → value

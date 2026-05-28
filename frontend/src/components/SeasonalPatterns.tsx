@@ -71,7 +71,12 @@ export const SeasonalPatterns: React.FC<SeasonalPatternsProps> = ({ filters }) =
       <div className="seasonal-grid">
         {seasonalData.map((data, idx) => {
           const sortedSeasons = [...data.seasons].sort((a, b) => {
-            return seasonOrder.indexOf(a.season) - seasonOrder.indexOf(b.season);
+            const ai = seasonOrder.indexOf(a.season);
+            const bi = seasonOrder.indexOf(b.season);
+            if (ai === -1 && bi === -1) return a.season.localeCompare(b.season);
+            if (ai === -1) return 1;
+            if (bi === -1) return -1;
+            return ai - bi;
           });
 
           return (
