@@ -31,13 +31,6 @@ export const Filters: React.FC<FiltersProps> = ({ metadata, filters, onFiltersCh
     onFiltersChange({ ...filters, date_range: [start, end] });
   };
 
-  const handleDateRangeChange = (start: string, end: string) => {
-    onFiltersChange({
-      ...filters,
-      date_range: [start, end],
-    });
-  };
-
   const handlePollutantsChange = (pollutants: string[]) => {
     onFiltersChange({
       ...filters,

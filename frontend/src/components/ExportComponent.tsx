@@ -53,25 +53,6 @@ export const ExportComponent: React.FC<ExportComponentProps> = ({ filters }) => 
     }
   };
 
-  const exportChartAsImage = (chartId: string, filename: string) => {
-    const chartElement = document.getElementById(chartId);
-    if (!chartElement) {
-      alert('Chart not found');
-      return;
-    }
-
-    // For Plotly charts, use the built-in export
-    const plotlyElement = chartElement.querySelector('.js-plotly-plot');
-    if (plotlyElement) {
-      // Plotly charts can be exported using their API
-      alert('Right-click on the chart and select "Download plot as png" to export.');
-      return;
-    }
-
-    // For other charts, use html2canvas (would need to install)
-    alert('Chart export functionality requires additional setup. Use browser screenshot for now.');
-  };
-
   return (
     <div className="export-component">
       <h3>Export Data</h3>

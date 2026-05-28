@@ -143,7 +143,7 @@ export const TimeSeriesHeatmapTab: React.FC<TimeSeriesHeatmapTabProps> = ({ filt
     const { data, x_col, value_col, unit } = timeseriesData;
 
     // Group by pollutant_short for different lines
-    const pollutants = [...new Set(data.map((d: any) => d.pollutant_short))];
+    const pollutants = [...new Set(data.map((d: any) => d.pollutant_short))] as string[];
     const traces = pollutants.map((pollutant: string) => {
       const pollutantData = data.filter((d: any) => d.pollutant_short === pollutant);
       return {

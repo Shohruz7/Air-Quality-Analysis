@@ -1,4 +1,5 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
+import type { ReactNode } from 'react';
 
 interface Props { children: ReactNode; label?: string; }
 interface State { hasError: boolean; error: Error | null; }
