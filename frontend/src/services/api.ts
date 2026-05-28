@@ -379,7 +379,12 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
     let tsData: TSRow[] = [];
 
     if (aggLevel === 'Season') {
-      const groups = groupBy(agg as AggRow[], r => `${r.season}|${r.year}|${r.pollutant}`);
+      const DISPLAY_SEASONS = new Set(['Winter', 'Spring', 'Summer', 'Fall', 'Annual']);
+      const seasonRows = (agg as AggRow[]).filter(r => DISPLAY_SEASONS.has(r.season));
+      if (!seasonRows.length)
+        return { data: [], message: 'No seasonal data (Winter/Summer/Annual) for selected filters. Try Year aggregation.' };
+
+      const groups = groupBy(seasonRows, r => `${r.season}|${r.year}|${r.pollutant}`);
       for (const [, grp] of groups) {
         const rep = grp[0] as AggRow;
         const seasonMonth = SEASON_MONTH[rep.season] ?? 1;
