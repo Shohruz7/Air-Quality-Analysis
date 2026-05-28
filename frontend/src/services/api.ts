@@ -375,7 +375,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
     const shortenPollutant = (p: string) => POLLUTANT_SHORT[p] ?? normalizePollutant(p).slice(0, 20);
     const SEASON_MONTH: Record<string, number> = { Winter: 1, Spring: 3, Summer: 6, Fall: 9, Annual: 1 };
 
-    type TSRow = { date_str?: string; year?: number; date?: string; pollutant_short: string; value_mean: number; sort_key?: number };
+    type TSRow = { date_str?: string; year?: string; date?: string; pollutant_short: string; value_mean: number; sort_key?: number };
     let tsData: TSRow[] = [];
 
     if (aggLevel === 'Season') {
@@ -399,13 +399,13 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
       for (const [, grp] of groups) {
         const rep = grp[0] as AggRow;
         tsData.push({
-          year: rep.year,
+          year: String(rep.year),
           pollutant_short: shortenPollutant(rep.pollutant),
           value_mean: mean(grp.map(r => (r as AggRow).value_mean).filter(isFinite)),
           sort_key: rep.year,
         });
       }
-      tsData.sort((a, b) => (a.year ?? 0) - (b.year ?? 0));
+      tsData.sort((a, b) => (a.sort_key ?? 0) - (b.sort_key ?? 0));
       return { data: tsData, x_col: 'year', value_col: 'value_mean', unit: '' };
     }
 

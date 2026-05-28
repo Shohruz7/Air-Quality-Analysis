@@ -159,9 +159,15 @@ export const TimeSeriesHeatmapTab: React.FC<TimeSeriesHeatmapTabProps> = ({ filt
       data: traces,
       layout: {
         height: 400,
-        xaxis: { title: 'Time Period' },
+        xaxis: {
+          title: 'Time Period',
+          type: 'category' as const,
+          tickangle: -45,
+          automargin: true,
+        },
         yaxis: { title: `Value (${unit})` },
         hovermode: 'closest',
+        margin: { b: 120 },
       },
     };
 
