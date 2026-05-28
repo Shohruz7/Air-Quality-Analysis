@@ -93,7 +93,7 @@ function App() {
         <div className="loading">
           <div>Loading dashboard...</div>
           <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
-            Connecting to backend API...
+            Loading CSV data...
           </div>
         </div>
       </div>
@@ -106,7 +106,7 @@ function App() {
         <div className="loading" style={{ color: '#d32f2f' }}>
           <div>Failed to load dashboard data</div>
           <div style={{ marginTop: '10px', fontSize: '14px' }}>
-            Please check that the backend API is running and reachable.
+            Could not load CSV data. Check browser console for details.
           </div>
         </div>
       </div>

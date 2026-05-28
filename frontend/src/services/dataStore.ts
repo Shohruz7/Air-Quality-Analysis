@@ -64,13 +64,22 @@ export async function getData(): Promise<Row[]> {
   if (loadingPromise) return loadingPromise;
   loadingPromise = fetch('/data/measurements.csv')
     .then(r => {
-      if (!r.ok) throw new Error(`Failed to load data: ${r.status}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status} fetching /data/measurements.csv`);
       return r.text();
     })
     .then(text => {
       cache = parseCSV(text);
+      if (cache.length === 0)
+        console.error('[dataStore] 0 rows parsed — server may have returned HTML instead of CSV. First 200 chars:', text.slice(0, 200));
+      else
+        console.log(`[dataStore] Loaded ${cache.length} rows`);
       loadingPromise = null;
       return cache;
+    })
+    .catch(err => {
+      loadingPromise = null;
+      console.error('[dataStore] CSV load failed:', err.message);
+      throw err;
     });
   return loadingPromise;
 }
