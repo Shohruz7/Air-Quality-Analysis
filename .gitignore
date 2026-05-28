@@ -103,6 +103,11 @@ dmypy.json
 
 # Vite build artifacts
 frontend/vite.config.ts.timestamp-*.mjs
-vercel.md 
+vercel.md
 windows.md
 tests.md
+
+# Allow frontend static data files (client-side deployment needs these in git)
+!frontend/public/data/
+!frontend/public/data/measurements.csv
+!frontend/public/data/nyc-boroughs.geojson
