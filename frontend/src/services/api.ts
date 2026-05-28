@@ -124,13 +124,14 @@ function aggregateData(rows: Row[], aggLevel: string): AggRow[] {
     const vals = grp.map(r => r.value).filter(v => isFinite(v));
     if (!vals.length) continue;
     const rep = grp[0];
+    const r2 = (v: number) => parseFloat(v.toFixed(2));
     result.push({
       year: rep.year, month: rep.month, season: rep.season,
       pollutant: rep.pollutant, borough: rep.borough, date: rep.date,
-      value_mean: mean(vals),
-      value_median: median(vals),
-      value_min: Math.min(...vals),
-      value_max: Math.max(...vals),
+      value_mean: r2(mean(vals)),
+      value_median: r2(median(vals)),
+      value_min: r2(Math.min(...vals)),
+      value_max: r2(Math.max(...vals)),
       value_count: vals.length,
       unit: '',
     });
@@ -391,7 +392,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
         tsData.push({
           date_str: `${rep.season} ${rep.year}`,
           pollutant_short: shortenPollutant(rep.pollutant),
-          value_mean: mean(grp.map(r => (r as AggRow).value_mean).filter(isFinite)),
+          value_mean: parseFloat(mean(grp.map(r => (r as AggRow).value_mean).filter(isFinite)).toFixed(2)),
           sort_key: rep.year * 100 + seasonMonth,
         });
       }
@@ -406,7 +407,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
         tsData.push({
           year: String(rep.year),
           pollutant_short: shortenPollutant(rep.pollutant),
-          value_mean: mean(grp.map(r => (r as AggRow).value_mean).filter(isFinite)),
+          value_mean: parseFloat(mean(grp.map(r => (r as AggRow).value_mean).filter(isFinite)).toFixed(2)),
           sort_key: rep.year,
         });
       }
@@ -622,7 +623,7 @@ export const apiService: Record<string, (...args: any[]) => Promise<any>> & {
       const bySeason = groupBy(yearRows, r => r.season);
       for (const [season, grp] of bySeason) {
         const v = mean(grp.map(r => r.value).filter(isFinite));
-        if (isFinite(v)) seasonData[season] = parseFloat(v.toFixed(3));
+        if (isFinite(v)) seasonData[season] = parseFloat(v.toFixed(2));
       }
       if (Object.keys(seasonData).length) data[String(year)] = seasonData;
     }

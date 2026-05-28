@@ -170,6 +170,7 @@ export const TimeSeriesHeatmapTab: React.FC<TimeSeriesHeatmapTabProps> = ({ filt
         type: 'scatter',
         mode: 'lines+markers',
         name: pollutant,
+        hovertemplate: '<b>%{data.name}</b><br>%{x}: %{y:.2f}<extra></extra>',
       };
     });
 
@@ -253,7 +254,9 @@ export const TimeSeriesHeatmapTab: React.FC<TimeSeriesHeatmapTabProps> = ({ filt
               {tableData.slice(0, 1000).map((row, idx) => (
                 <tr key={idx}>
                   {Object.values(row).map((value: any, colIdx) => (
-                    <td key={colIdx}>{String(value)}</td>
+                    <td key={colIdx}>
+                      {typeof value === 'number' ? value.toFixed(2) : String(value)}
+                    </td>
                   ))}
                 </tr>
               ))}
