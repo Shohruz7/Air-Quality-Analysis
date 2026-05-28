@@ -41,3 +41,7 @@ Dockerfile
 
 # Windows setup
 WINDOWS_SETUP.md
+
+# Allow frontend data assets required for the Vite build
+!frontend/src/assets/measurements.csv
+!frontend/src/assets/nyc-boroughs.geojson
